@@ -7,6 +7,8 @@
 #include <QStatusBar>
 #include <QPlainTextEdit>
 #include "settings.h"
+#include "courses.h"
+#include <QDebug>
 
 cmsdialog::cmsdialog(QWidget *parent)
     : QWidget(parent)
@@ -16,8 +18,6 @@ cmsdialog::cmsdialog(QWidget *parent)
     horiz = new QHBoxLayout();
 
     butSync = new QPushButton("Sync");
-    butAddCourses = new QPushButton("Add");
-    butRemoveCourses = new QPushButton("Remove");
     butCourses = new QPushButton("View Courses");
     butSettings = new QPushButton("Settings");
 
@@ -26,8 +26,6 @@ cmsdialog::cmsdialog(QWidget *parent)
     statusBar = new QStatusBar();
 
     horiz->addWidget(butSync);
-    horiz->addWidget(butAddCourses);
-    horiz->addWidget(butRemoveCourses);
     horiz->addWidget(butCourses);
 
     vert->addLayout(horiz);
@@ -47,9 +45,7 @@ cmsdialog::cmsdialog(QWidget *parent)
 
     //SIGNALS SLOTS
     connect(butSync, SIGNAL(clicked()), SLOT(sync()));
-    connect(butAddCourses, SIGNAL(clicked()), SLOT(add()));
-    connect(butRemoveCourses, SIGNAL(clicked()), SLOT(remove()));
-    connect(butCourses, SIGNAL(clicked()), SLOT(courses()));
+    connect(butCourses, SIGNAL(clicked()), SLOT(courseView()));
     connect(butSettings, SIGNAL(clicked()), SLOT(settingSlot()));
     //END SIGNALS SLOTS
 
@@ -64,6 +60,7 @@ void cmsdialog::finishedExec(int a){
     //QByteArray output = newProc->readAll();
     //mssg.setText(output);
     //mssg.exec();
+    newProc->disconnect();
 }
 
 cmsdialog::~cmsdialog()
@@ -71,22 +68,18 @@ cmsdialog::~cmsdialog()
     
 }
 
-void cmsdialog::courses(){
+void cmsdialog::courseView(){
     textarea->clear();
     textarea->appendPlainText("Viewing Courses");
     procCall(QStringList()<<"courses");
-}
+    if(newProc->waitForFinished()){
+        courses newCourseDialog(this);
+        newCourseDialog.setData(textarea->toPlainText());
+        connect(&newCourseDialog, SIGNAL(clicker(QStringList)), this, SLOT(courseCall(QStringList)));
+        newCourseDialog.setModal(true);
+        newCourseDialog.exec();
 
-void cmsdialog::add(){
-    textarea->clear();
-    textarea->appendPlainText("Viewing Courses");
-    procCall(QStringList()<<"courses");
-}
-
-void cmsdialog::remove(){
-    textarea->clear();
-    textarea->appendPlainText("Viewing Courses");
-    procCall(QStringList()<<"courses");
+    }
 }
 
 void cmsdialog::sync(){
@@ -97,7 +90,9 @@ void cmsdialog::sync(){
 
 void cmsdialog::procCall(QStringList arguments){
     QString program = settings->value("paths/executable","").toString();
+
     if(program!=""){
+        qDebug()<< "inhere" <<endl;
         newProc = new QProcess();
         connect(newProc,SIGNAL(finished(int)), SLOT(finishedExec(int)));
         connect(newProc, SIGNAL(readyReadStandardOutput()), SLOT(writeToTxt()));
@@ -118,4 +113,21 @@ void cmsdialog::settingSlot(){
         settings->setValue("paths/executable", settingDialog.getPath());
         statusBar->showMessage(settingDialog.getPath());
     }
+}
+
+QString cmsdialog::callCourse(){
+    textarea->clear();
+    textarea->appendPlainText("Viewing Courses");
+    procCall(QStringList()<<"courses");
+    if(newProc->waitForFinished()){
+        return textarea->toPlainText();
+    }
+    return "";
+}
+
+void cmsdialog::courseCall(QStringList arguments){
+    textarea->clear();
+    procCall(arguments);
+    if(newProc->waitForFinished())
+        qDebug() << arguments.join(" ") << endl;
 }

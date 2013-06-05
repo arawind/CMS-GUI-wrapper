@@ -18,6 +18,7 @@ class cmsdialog : public QWidget
 public:
     cmsdialog(QWidget *parent = 0);
     void procCall(QStringList);
+    QString callCourse();
     ~cmsdialog();
 private:
     QProcess *newProc;
@@ -25,8 +26,7 @@ private:
     QVBoxLayout *vert;
     QHBoxLayout *horiz;
     QPushButton *butSync;
-    QPushButton *butAddCourses;
-    QPushButton *butRemoveCourses;
+    QPushButton *butVersion;
     QPushButton *butCourses;
     QPushButton *butSettings;
     QPlainTextEdit *textarea;
@@ -37,12 +37,11 @@ private:
 
 private slots:
     void finishedExec(int);
-    void add();
-    void remove();
     void sync();
-    void courses();
+    void courseView();
     void settingSlot();
     void writeToTxt();
+    void courseCall(QStringList);
 };
 
 #endif // CMSDIALOG_H
